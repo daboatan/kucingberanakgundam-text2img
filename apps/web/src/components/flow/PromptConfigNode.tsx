@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { ImageIcon, Sparkles } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 
 export type PromptConfigNodeData = {
   prompt: string;

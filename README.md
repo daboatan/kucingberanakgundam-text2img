@@ -23,14 +23,33 @@ A modern Text-to-Image generation web application with multiple AI providers (Gi
 - Settings persistence in localStorage (including blur state)
 - Responsive design (mobile & desktop)
 - Modular component architecture for maintainability
+- **[Experimental] Flow Mode**: Visual canvas for batch image generation with React Flow
 
 ## Tech Stack
 
-- **Frontend**: React 19, Vite, Tailwind CSS, shadcn/ui
+- **Frontend**: React 19, Vite, Tailwind CSS, shadcn/ui, React Flow
 - **Backend**: Hono (TypeScript)
 - **Deployment**: Cloudflare Pages + Functions
 - **API**: Gitee AI (z-image-turbo)
 - **Architecture**: Custom hooks, modular feature components
+
+## Flow Mode (Experimental)
+
+Flow Mode provides a visual canvas for batch image generation using React Flow.
+
+**Access**: Click "Flow Mode" in the header or navigate to `/flow`
+
+**Features**:
+- Visual node-based canvas with drag-and-drop
+- Batch generation (1-4 images per prompt)
+- Floating input bar for quick prompts
+- Session sidebar with history
+- Per-image download and blur controls
+- Auto-layout using dagre algorithm
+
+**Limitations**:
+- ⚠️ **Session data is stored in memory only** - refreshing the browser will lose all generated images
+- Settings (aspect ratio, resolution) persist in localStorage, but images do not
 
 ## Project Structure
 
@@ -39,12 +58,13 @@ z-image/
 ├── apps/
 │   ├── web/                    # Frontend application
 │   │   ├── src/
-│   │   │   ├── pages/          # Page components
+│   │   │   ├── pages/          # Page components (ImageGenerator, FlowPage)
 │   │   │   ├── components/
 │   │   │   │   ├── ui/         # shadcn/ui components
-│   │   │   │   └── feature/    # Feature components (Header, PromptCard, etc.)
+│   │   │   │   ├── feature/    # Feature components (Header, PromptCard, etc.)
+│   │   │   │   └── flow/       # Flow Mode components (AIResultNode, etc.)
 │   │   │   ├── hooks/          # Custom React hooks (useImageGenerator)
-│   │   │   └── lib/            # Utilities (crypto, constants)
+│   │   │   └── lib/            # Utilities (crypto, constants, flow-storage)
 │   │   ├── functions/api/      # Cloudflare Pages Functions
 │   │   └── dist/               # Build output
 │   └── api/                    # Hono API (shared with functions)

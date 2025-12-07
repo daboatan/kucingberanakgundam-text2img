@@ -23,14 +23,33 @@
 - 设置持久化到 localStorage (包括模糊状态)
 - 响应式设计 (移动端 & 桌面端)
 - 模块化组件架构，易于维护
+- **[实验性] Flow 模式**: 基于 React Flow 的可视化批量生图画布
 
 ## 技术栈
 
-- **前端**: React 19, Vite, Tailwind CSS, shadcn/ui
+- **前端**: React 19, Vite, Tailwind CSS, shadcn/ui, React Flow
 - **后端**: Hono (TypeScript)
 - **部署**: Cloudflare Pages + Functions
 - **API**: Gitee AI (z-image-turbo)
 - **架构**: 自定义 Hooks、模块化功能组件
+
+## Flow 模式 (实验性)
+
+Flow 模式提供了一个基于 React Flow 的可视化批量生图画布。
+
+**访问方式**: 点击顶部导航栏的 "Flow Mode" 或访问 `/flow`
+
+**功能特性**:
+- 可视化节点画布，支持拖拽
+- 批量生成 (每个提示词 1-4 张图)
+- 悬浮输入栏，快速输入提示词
+- 会话侧边栏，查看历史记录
+- 单张图片下载和模糊控制
+- 使用 dagre 算法自动布局
+
+**限制**:
+- ⚠️ **会话数据仅存储在内存中** - 刷新浏览器将丢失所有生成的图片
+- 设置 (宽高比、分辨率) 会持久化到 localStorage，但图片不会
 
 ## 项目结构
 
@@ -39,12 +58,13 @@ z-image/
 ├── apps/
 │   ├── web/                    # 前端应用
 │   │   ├── src/
-│   │   │   ├── pages/          # 页面组件
+│   │   │   ├── pages/          # 页面组件 (ImageGenerator, FlowPage)
 │   │   │   ├── components/
 │   │   │   │   ├── ui/         # shadcn/ui 组件
-│   │   │   │   └── feature/    # 功能组件 (Header, PromptCard 等)
+│   │   │   │   ├── feature/    # 功能组件 (Header, PromptCard 等)
+│   │   │   │   └── flow/       # Flow 模式组件 (AIResultNode 等)
 │   │   │   ├── hooks/          # 自定义 React Hooks (useImageGenerator)
-│   │   │   └── lib/            # 工具函数 (crypto, constants)
+│   │   │   └── lib/            # 工具函数 (crypto, constants, flow-storage)
 │   │   ├── functions/api/      # Cloudflare Pages Functions
 │   │   └── dist/               # 构建输出
 │   └── api/                    # Hono API (与 functions 共享)
