@@ -1,35 +1,35 @@
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Slider } from '@/components/ui/slider'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Sparkles, Loader2, RotateCcw } from "lucide-react";
-import { ASPECT_RATIOS, type AspectRatio } from "@/lib/constants";
+} from '@/components/ui/accordion'
+import { Sparkles, Loader2, RotateCcw } from 'lucide-react'
+import { ASPECT_RATIOS, type AspectRatio } from '@/lib/constants'
 
 interface PromptCardProps {
-  prompt: string;
-  negativePrompt: string;
-  steps: number;
-  width: number;
-  height: number;
-  selectedRatio: string;
-  uhd: boolean;
-  loading: boolean;
-  setPrompt: (v: string) => void;
-  setNegativePrompt: (v: string) => void;
-  setSteps: (v: number) => void;
-  setWidth: (v: number) => void;
-  setHeight: (v: number) => void;
-  handleRatioSelect: (ratio: AspectRatio) => void;
-  handleUhdToggle: (enabled: boolean) => void;
-  handleGenerate: () => void;
+  prompt: string
+  negativePrompt: string
+  steps: number
+  width: number
+  height: number
+  selectedRatio: string
+  uhd: boolean
+  loading: boolean
+  setPrompt: (v: string) => void
+  setNegativePrompt: (v: string) => void
+  setSteps: (v: number) => void
+  setWidth: (v: number) => void
+  setHeight: (v: number) => void
+  handleRatioSelect: (ratio: AspectRatio) => void
+  handleUhdToggle: (enabled: boolean) => void
+  handleGenerate: () => void
 }
 
 export function PromptCard({
@@ -72,9 +72,7 @@ export function PromptCard({
             <AccordionContent>
               <div className="space-y-4 pt-2">
                 <div>
-                  <Label className="text-zinc-400 text-xs">
-                    Negative Prompt
-                  </Label>
+                  <Label className="text-zinc-400 text-xs">Negative Prompt</Label>
                   <Textarea
                     rows={2}
                     value={negativePrompt}
@@ -88,8 +86,7 @@ export function PromptCard({
                       className="w-3 h-3 cursor-pointer hover:text-orange-400"
                       onClick={() => setSteps(9)}
                     />
-                    Inference Steps:{" "}
-                    <span className="text-orange-400 font-mono">{steps}</span>
+                    Inference Steps: <span className="text-orange-400 font-mono">{steps}</span>
                   </Label>
                   <Slider
                     value={[steps]}
@@ -107,9 +104,7 @@ export function PromptCard({
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-zinc-300 text-sm font-medium">
-              Aspect Ratio
-            </Label>
+            <Label className="text-zinc-300 text-sm font-medium">Aspect Ratio</Label>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Label htmlFor="uhd" className="text-zinc-400 text-xs">
@@ -126,22 +121,22 @@ export function PromptCard({
           </div>
           <div className="flex gap-2">
             {ASPECT_RATIOS.map((ratio) => {
-              const Icon = ratio.icon;
-              const isSelected = selectedRatio === ratio.label;
+              const Icon = ratio.icon
+              const isSelected = selectedRatio === ratio.label
               return (
                 <button
                   key={ratio.label}
                   onClick={() => handleRatioSelect(ratio)}
                   className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg border transition-all ${
                     isSelected
-                      ? "bg-orange-500/10 border-orange-500 text-orange-400"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                      ? 'bg-orange-500/10 border-orange-500 text-orange-400'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-xs font-medium">{ratio.label}</span>
                 </button>
-              );
+              )
             })}
           </div>
         </div>
@@ -152,15 +147,11 @@ export function PromptCard({
               <RotateCcw
                 className="w-3 h-3 cursor-pointer hover:text-orange-400"
                 onClick={() => {
-                  const ratio = ASPECT_RATIOS.find(
-                    (r) => r.label === selectedRatio
-                  );
-                  if (ratio)
-                    setWidth(uhd ? ratio.presets[1].w : ratio.presets[0].w);
+                  const ratio = ASPECT_RATIOS.find((r) => r.label === selectedRatio)
+                  if (ratio) setWidth(uhd ? ratio.presets[1].w : ratio.presets[0].w)
                 }}
               />
-              Width:{" "}
-              <span className="text-orange-400 font-mono">{width}px</span>
+              Width: <span className="text-orange-400 font-mono">{width}px</span>
             </Label>
             <Slider
               value={[width]}
@@ -176,15 +167,11 @@ export function PromptCard({
               <RotateCcw
                 className="w-3 h-3 cursor-pointer hover:text-orange-400"
                 onClick={() => {
-                  const ratio = ASPECT_RATIOS.find(
-                    (r) => r.label === selectedRatio
-                  );
-                  if (ratio)
-                    setHeight(uhd ? ratio.presets[1].h : ratio.presets[0].h);
+                  const ratio = ASPECT_RATIOS.find((r) => r.label === selectedRatio)
+                  if (ratio) setHeight(uhd ? ratio.presets[1].h : ratio.presets[0].h)
                 }}
               />
-              Height:{" "}
-              <span className="text-orange-400 font-mono">{height}px</span>
+              Height: <span className="text-orange-400 font-mono">{height}px</span>
             </Label>
             <Slider
               value={[height]}
@@ -216,5 +203,5 @@ export function PromptCard({
         </Button>
       </CardContent>
     </Card>
-  );
+  )
 }

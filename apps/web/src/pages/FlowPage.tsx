@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useState, useRef, useEffect } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -12,56 +12,52 @@ import {
   type Node,
   type Edge,
   BackgroundVariant,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Settings, X, Download, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
+import { ArrowLeft, Settings, X, Download, Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import {
   encryptAndStore,
   decryptFromStore,
   encryptAndStoreHfToken,
   decryptHfTokenFromStore,
-} from "@/lib/crypto";
+} from '@/lib/crypto'
 import {
   loadFlowState,
   saveFlowState,
   clearFlowState,
   type GeneratedImage,
-} from "@/lib/flow-storage";
-import { loadSettings, saveSettings, type ApiProvider } from "@/lib/constants";
-import UserPromptNode, {
-  type UserPromptNodeData,
-} from "@/components/flow/UserPromptNode";
-import AIResultNode, {
-  type AIResultNodeData,
-} from "@/components/flow/AIResultNode";
-import { getLayoutedElements } from "@/components/flow/layout";
-import FloatingInput from "@/components/flow/FloatingInput";
-import { ApiConfigAccordion } from "@/components/feature/ApiConfigAccordion";
+} from '@/lib/flow-storage'
+import { loadSettings, saveSettings, type ApiProvider } from '@/lib/constants'
+import UserPromptNode, { type UserPromptNodeData } from '@/components/flow/UserPromptNode'
+import AIResultNode, { type AIResultNodeData } from '@/components/flow/AIResultNode'
+import { getLayoutedElements } from '@/components/flow/layout'
+import FloatingInput from '@/components/flow/FloatingInput'
+import { ApiConfigAccordion } from '@/components/feature/ApiConfigAccordion'
 
 const nodeTypes = {
   userPrompt: UserPromptNode,
   aiResult: AIResultNode,
-};
+}
 
 function FlowCanvas() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [apiKey, setApiKey] = useState("");
-  const [hfToken, setHfToken] = useState("");
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const [apiKey, setApiKey] = useState('')
+  const [hfToken, setHfToken] = useState('')
   const [apiProvider, setApiProvider] = useState<ApiProvider>(
-    () => loadSettings().apiProvider ?? "gitee",
-  );
-  const [showSettings, setShowSettings] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const nodeIdRef = useRef(0);
-  const imagesRef = useRef<GeneratedImage[]>([]);
-  const { fitView, setViewport } = useReactFlow();
+    () => loadSettings().apiProvider ?? 'gitee'
+  )
+  const [showSettings, setShowSettings] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const nodeIdRef = useRef(0)
+  const imagesRef = useRef<GeneratedImage[]>([])
+  const { fitView, setViewport } = useReactFlow()
 
   // Create image generated handler
   const handleImageGenerated = useCallback(
     (nodeId: string, image: GeneratedImage) => {
-      imagesRef.current = [...imagesRef.current, image];
+      imagesRef.current = [...imagesRef.current, image]
       // Update node data with the generated image URL
       setNodes((nds) =>
         nds.map((node) =>
@@ -74,141 +70,139 @@ function FlowCanvas() {
                   duration: image.duration,
                 },
               }
-            : node,
-        ),
-      );
+            : node
+        )
+      )
     },
-    [setNodes],
-  );
+    [setNodes]
+  )
 
   // Auto-save when nodes/edges/images change
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded) return
     const timeoutId = setTimeout(() => {
       saveFlowState({
         nodes,
         edges,
         images: imagesRef.current,
         nodeIdCounter: nodeIdRef.current,
-      });
-    }, 500); // Debounce saves
-    return () => clearTimeout(timeoutId);
-  }, [nodes, edges, isLoaded]);
+      })
+    }, 500) // Debounce saves
+    return () => clearTimeout(timeoutId)
+  }, [nodes, edges, isLoaded])
 
   // Load saved state on mount
   useEffect(() => {
     loadFlowState().then((state) => {
       if (state && state.nodes && state.nodes.length > 0) {
         // Restore images
-        imagesRef.current = state.images || [];
-        nodeIdRef.current = state.nodeIdCounter || 0;
+        imagesRef.current = state.images || []
+        nodeIdRef.current = state.nodeIdCounter || 0
 
         // Create an image lookup map
-        const imageMap = new Map(imagesRef.current.map((img) => [img.id, img]));
+        const imageMap = new Map(imagesRef.current.map((img) => [img.id, img]))
 
         // Restore nodes with callbacks and image URLs
         const restoredNodes = state.nodes.map((node) => {
-          if (node.type === "aiResult") {
-            const image = imageMap.get(node.id);
+          if (node.type === 'aiResult') {
+            const image = imageMap.get(node.id)
             return {
               ...node,
               data: {
                 ...node.data,
-                imageUrl:
-                  image?.url || (node.data as AIResultNodeData).imageUrl,
-                duration:
-                  image?.duration || (node.data as AIResultNodeData).duration,
+                imageUrl: image?.url || (node.data as AIResultNodeData).imageUrl,
+                duration: image?.duration || (node.data as AIResultNodeData).duration,
                 onImageGenerated: handleImageGenerated,
               },
-            };
+            }
           }
-          return node;
-        });
+          return node
+        })
 
-        setNodes(restoredNodes);
-        setEdges(state.edges || []);
+        setNodes(restoredNodes)
+        setEdges(state.edges || [])
 
         // Restore viewport if available
         if (state.viewport) {
-          setTimeout(() => setViewport(state.viewport!), 100);
+          setTimeout(() => setViewport(state.viewport!), 100)
         } else {
-          setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100);
+          setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100)
         }
 
         // console.log(`Restored ${restoredNodes.length} nodes, ${state.images?.length || 0} images`);
       }
-      setIsLoaded(true);
-    });
-  }, [setNodes, setEdges, setViewport, fitView, handleImageGenerated]);
+      setIsLoaded(true)
+    })
+  }, [setNodes, setEdges, setViewport, fitView, handleImageGenerated])
 
   useEffect(() => {
-    decryptFromStore().then((key) => setApiKey(key || ""));
-    decryptHfTokenFromStore().then((token) => setHfToken(token || ""));
-  }, []);
+    decryptFromStore().then((key) => setApiKey(key || ''))
+    decryptHfTokenFromStore().then((token) => setHfToken(token || ''))
+  }, [])
 
   const saveApiKey = async (key: string) => {
-    await encryptAndStore(key);
-    setApiKey(key);
-  };
+    await encryptAndStore(key)
+    setApiKey(key)
+  }
 
   const saveHfToken = async (token: string) => {
-    setHfToken(token);
-    await encryptAndStoreHfToken(token);
-  };
+    setHfToken(token)
+    await encryptAndStoreHfToken(token)
+  }
 
   const updateSettings = (patch: Partial<Record<string, unknown>>) => {
-    const prev = loadSettings();
-    saveSettings({ ...prev, ...patch });
-  };
+    const prev = loadSettings()
+    saveSettings({ ...prev, ...patch })
+  }
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
-  );
+    [setEdges]
+  )
 
   const handleDownloadAll = async () => {
-    if (imagesRef.current.length === 0) return;
+    if (imagesRef.current.length === 0) return
     for (let i = 0; i < imagesRef.current.length; i++) {
-      const img = imagesRef.current[i];
-      const a = document.createElement("a");
-      a.href = img.url;
-      a.download = `zenith-flow-${i + 1}.png`;
-      a.click();
-      await new Promise((r) => setTimeout(r, 200));
+      const img = imagesRef.current[i]
+      const a = document.createElement('a')
+      a.href = img.url
+      a.download = `zenith-flow-${i + 1}.png`
+      a.click()
+      await new Promise((r) => setTimeout(r, 200))
     }
-  };
+  }
 
   const handleClearAll = async () => {
-    if (confirm("Clear all nodes and saved images?")) {
-      setNodes([]);
-      setEdges([]);
-      imagesRef.current = [];
-      nodeIdRef.current = 0;
-      await clearFlowState();
+    if (confirm('Clear all nodes and saved images?')) {
+      setNodes([])
+      setEdges([])
+      imagesRef.current = []
+      nodeIdRef.current = 0
+      await clearFlowState()
     }
-  };
+  }
 
   const addNode = useCallback(
     (config: {
-      prompt: string;
-      width: number;
-      height: number;
-      batchCount: number;
-      seed: number;
+      prompt: string
+      width: number
+      height: number
+      batchCount: number
+      seed: number
     }) => {
-      const newNodes: Node[] = [];
-      const newEdges: Edge[] = [];
-      const lastNodeId = nodes.length > 0 ? nodes[nodes.length - 1].id : null;
-      const timestamp = new Date().toLocaleTimeString("zh-CN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      const aspectRatio = `${config.width}:${config.height}`;
+      const newNodes: Node[] = []
+      const newEdges: Edge[] = []
+      const lastNodeId = nodes.length > 0 ? nodes[nodes.length - 1].id : null
+      const timestamp = new Date().toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      const aspectRatio = `${config.width}:${config.height}`
 
-      const promptNodeId = `prompt-${++nodeIdRef.current}`;
+      const promptNodeId = `prompt-${++nodeIdRef.current}`
       newNodes.push({
         id: promptNodeId,
-        type: "userPrompt",
+        type: 'userPrompt',
         position: { x: 0, y: 0 },
         data: {
           prompt: config.prompt,
@@ -217,21 +211,21 @@ function FlowCanvas() {
           height: config.height,
           batchCount: config.batchCount,
         } as UserPromptNodeData,
-      });
+      })
 
       if (lastNodeId) {
         newEdges.push({
           id: `e-${lastNodeId}-${promptNodeId}`,
           source: lastNodeId,
           target: promptNodeId,
-        });
+        })
       }
 
       for (let i = 0; i < config.batchCount; i++) {
-        const resultNodeId = `result-${++nodeIdRef.current}`;
+        const resultNodeId = `result-${++nodeIdRef.current}`
         newNodes.push({
           id: resultNodeId,
-          type: "aiResult",
+          type: 'aiResult',
           position: { x: 0, y: 0 },
           data: {
             prompt: config.prompt,
@@ -239,42 +233,36 @@ function FlowCanvas() {
             height: config.height,
             aspectRatio,
             model:
-              apiProvider === "gitee"
-                ? "Gitee AI"
-                : apiProvider === "hf-qwen"
-                  ? "HF Qwen Image"
-                  : "HF Z-Image Turbo",
+              apiProvider === 'gitee'
+                ? 'Gitee AI'
+                : apiProvider === 'hf-qwen'
+                  ? 'HF Qwen Image'
+                  : 'HF Z-Image Turbo',
             seed: config.seed + i,
             onImageGenerated: handleImageGenerated,
           } as AIResultNodeData,
-        });
+        })
 
         newEdges.push({
           id: `e-${promptNodeId}-${resultNodeId}`,
           source: promptNodeId,
           target: resultNodeId,
-        });
+        })
       }
 
-      const nextNodes = [...nodes, ...newNodes];
-      const nextEdges = [...edges, ...newEdges];
-      const { nodes: layoutedNodes, edges: layoutedEdges } =
-        getLayoutedElements(nextNodes, nextEdges);
+      const nextNodes = [...nodes, ...newNodes]
+      const nextEdges = [...edges, ...newEdges]
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        nextNodes,
+        nextEdges
+      )
 
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100);
+      setNodes(layoutedNodes)
+      setEdges(layoutedEdges)
+      setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100)
     },
-    [
-      nodes,
-      edges,
-      setNodes,
-      setEdges,
-      fitView,
-      handleImageGenerated,
-      apiProvider,
-    ],
-  );
+    [nodes, edges, setNodes, setEdges, fitView, handleImageGenerated, apiProvider]
+  )
 
   return (
     <div className="h-screen w-screen bg-zinc-950">
@@ -331,9 +319,7 @@ function FlowCanvas() {
           >
             <Settings className="w-4 h-4" />
             <span className="text-sm">API</span>
-            {(apiKey || hfToken) && (
-              <span className="w-2 h-2 bg-green-500 rounded-full" />
-            )}
+            {(apiKey || hfToken) && <span className="w-2 h-2 bg-green-500 rounded-full" />}
           </button>
         </div>
       </div>
@@ -357,8 +343,8 @@ function FlowCanvas() {
               setApiKey={setApiKey}
               setHfToken={setHfToken}
               setApiProvider={(provider) => {
-                setApiProvider(provider);
-                updateSettings({ apiProvider: provider });
+                setApiProvider(provider)
+                updateSettings({ apiProvider: provider })
               }}
               saveApiKey={saveApiKey}
               saveHfToken={saveHfToken}
@@ -370,15 +356,15 @@ function FlowCanvas() {
       <FloatingInput
         onSubmit={addNode}
         providerLabel={
-          apiProvider === "gitee"
-            ? "Gitee AI"
-            : apiProvider === "hf-qwen"
-              ? "HF Qwen Image"
-              : "HF Z-Image Turbo"
+          apiProvider === 'gitee'
+            ? 'Gitee AI'
+            : apiProvider === 'hf-qwen'
+              ? 'HF Qwen Image'
+              : 'HF Z-Image Turbo'
         }
       />
     </div>
-  );
+  )
 }
 
 export default function FlowPage() {
@@ -386,5 +372,5 @@ export default function FlowPage() {
     <ReactFlowProvider>
       <FlowCanvas />
     </ReactFlowProvider>
-  );
+  )
 }

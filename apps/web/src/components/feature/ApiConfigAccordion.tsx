@@ -1,30 +1,30 @@
-import { Settings } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Settings } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from '@/components/ui/accordion'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { ApiProvider } from "@/lib/constants";
+} from '@/components/ui/select'
+import type { ApiProvider } from '@/lib/constants'
 
 interface ApiConfigAccordionProps {
-  apiKey: string;
-  hfToken: string;
-  apiProvider: ApiProvider;
-  setApiKey: (key: string) => void;
-  setHfToken: (token: string) => void;
-  setApiProvider: (provider: ApiProvider) => void;
-  saveApiKey: (key: string) => void;
-  saveHfToken: (token: string) => void;
+  apiKey: string
+  hfToken: string
+  apiProvider: ApiProvider
+  setApiKey: (key: string) => void
+  setHfToken: (token: string) => void
+  setApiProvider: (provider: ApiProvider) => void
+  saveApiKey: (key: string) => void
+  saveHfToken: (token: string) => void
 }
 
 export function ApiConfigAccordion({
@@ -48,19 +48,14 @@ export function ApiConfigAccordion({
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             <span>API Configuration</span>
-            {apiKey && (
-              <span className="text-xs text-green-500">● Configured</span>
-            )}
+            {apiKey && <span className="text-xs text-green-500">● Configured</span>}
           </div>
         </AccordionTrigger>
         <AccordionContent>
           <div className="space-y-3 pb-2">
             <div>
               <Label className="text-zinc-400 text-xs">API Provider</Label>
-              <Select
-                value={apiProvider}
-                onValueChange={(v) => setApiProvider(v as ApiProvider)}
-              >
+              <Select value={apiProvider} onValueChange={(v) => setApiProvider(v as ApiProvider)}>
                 <SelectTrigger className="mt-1 bg-zinc-950 border-zinc-800 text-zinc-100">
                   <SelectValue />
                 </SelectTrigger>
@@ -71,7 +66,7 @@ export function ApiConfigAccordion({
                 </SelectContent>
               </Select>
             </div>
-            {apiProvider === "gitee" ? (
+            {apiProvider === 'gitee' ? (
               <div>
                 <Label className="text-zinc-400 text-xs">Gitee API Key</Label>
                 <Input
@@ -85,9 +80,7 @@ export function ApiConfigAccordion({
               </div>
             ) : (
               <div>
-                <Label className="text-zinc-400 text-xs">
-                  HF Token (Optional)
-                </Label>
+                <Label className="text-zinc-400 text-xs">HF Token (Optional)</Label>
                 <Input
                   type="password"
                   placeholder="For extra quota..."
@@ -102,5 +95,5 @@ export function ApiConfigAccordion({
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-  );
+  )
 }

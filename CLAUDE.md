@@ -24,9 +24,17 @@ pnpm dev:api          # API only (port 8787)
 pnpm build
 pnpm build:web
 pnpm build:api
+pnpm build:shared     # Build shared package
 
-# Lint
-pnpm lint
+# Lint & Format (Biome)
+pnpm lint             # Lint all files
+pnpm format           # Format all files
+pnpm check            # Lint + format check
+
+# Test (Vitest)
+pnpm test             # Run tests in watch mode
+pnpm test:run         # Run tests once
+pnpm test:coverage    # Run tests with coverage
 
 # Deploy API to Cloudflare Workers
 cd apps/api && wrangler deploy --minify src/index.ts
@@ -34,23 +42,36 @@ cd apps/api && wrangler deploy --minify src/index.ts
 
 ## Architecture
 
-This is a pnpm monorepo using Turborepo with two apps:
+This is a pnpm monorepo using Turborepo with three packages:
 
 - `apps/web` - React 19 frontend (Vite, Tailwind CSS, shadcn/ui)
 - `apps/api` - Hono API for Cloudflare Workers
+- `packages/shared` - Shared types, constants, and utilities
 
-### API Integration
+### Shared Package (`packages/shared`)
 
-The API (`apps/api/src/index.ts`) is shared between:
-1. Standalone Cloudflare Workers deployment
-2. Cloudflare Pages Functions via `apps/web/functions/api/[[route]].ts`
+Contains code shared between frontend and API:
 
-The Pages Functions handler imports the Hono app directly, enabling single-deployment full-stack hosting.
+- `src/types/` - TypeScript type definitions (provider, image, api)
+- `src/constants/` - Provider configs, model configs, aspect ratios
+- `src/utils/` - Validation utilities (prompt, dimensions, steps)
+
+### API Provider System
+
+The API uses a provider abstraction pattern:
+
+- `apps/api/src/providers/types.ts` - Provider interface definition
+- `apps/api/src/providers/gitee.ts` - Gitee AI implementation
+- `apps/api/src/providers/huggingface.ts` - HuggingFace implementation
+- `apps/api/src/providers/registry.ts` - Provider registration and lookup
 
 ### Key Endpoints
 
-- `POST /api/generate` - Gitee AI image generation (requires `X-API-Key` header)
-- `POST /api/generate-hf` - HuggingFace Spaces generation (optional `X-HF-Token`)
+- `POST /api/generate` - Unified image generation endpoint
+  - Supports `provider` parameter: `"gitee"` | `"huggingface"`
+  - Requires `X-API-Key` header for Gitee AI
+  - Optional `X-HF-Token` header for HuggingFace
+- `POST /api/generate-hf` - Legacy HuggingFace endpoint (backward compatible)
 - `POST /api/upscale` - RealESRGAN 4x upscaling
 
 ### Frontend Structure
@@ -71,3 +92,9 @@ The Pages Functions handler imports the Hono app directly, enabling single-deplo
 - Settings and API keys are persisted to localStorage (encrypted)
 - Flow mode persists nodes/edges/images to IndexedDB
 - API URL configured via `VITE_API_URL` env var (defaults to relative path for same-origin deployment)
+
+### Tooling
+
+- **Biome** - Linting and formatting (replaces ESLint + Prettier)
+- **Vitest** - Testing framework for both frontend and API
+- **Turborepo** - Monorepo build orchestration

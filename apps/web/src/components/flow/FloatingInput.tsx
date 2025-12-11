@@ -1,96 +1,90 @@
-import { useState, useEffect, useCallback } from "react";
-import { ImageIcon, Sparkles, Zap, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ASPECT_RATIOS } from "@/lib/constants";
-import {
-  loadFlowInputSettings,
-  saveFlowInputSettings,
-} from "@/lib/flow-storage";
+import { useState, useEffect, useCallback } from 'react'
+import { ImageIcon, Sparkles, Zap, RefreshCw } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ASPECT_RATIOS } from '@/lib/constants'
+import { loadFlowInputSettings, saveFlowInputSettings } from '@/lib/flow-storage'
 
 interface FloatingInputProps {
   onSubmit: (config: {
-    prompt: string;
-    width: number;
-    height: number;
-    batchCount: number;
-    seed: number;
-  }) => void;
-  providerLabel: string;
+    prompt: string
+    width: number
+    height: number
+    batchCount: number
+    seed: number
+  }) => void
+  providerLabel: string
 }
 
-export default function FloatingInput({
-  onSubmit,
-  providerLabel,
-}: FloatingInputProps) {
-  const [aspectRatioIndex, setAspectRatioIndex] = useState(0);
-  const [resolutionIndex, setResolutionIndex] = useState(0); // 0=1K, 1=2K - independent of aspect ratio
-  const [prompt, setPrompt] = useState("");
-  const [batchCount, setBatchCount] = useState(2);
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000));
-  const [initialized, setInitialized] = useState(false);
+export default function FloatingInput({ onSubmit, providerLabel }: FloatingInputProps) {
+  const [aspectRatioIndex, setAspectRatioIndex] = useState(0)
+  const [resolutionIndex, setResolutionIndex] = useState(0) // 0=1K, 1=2K - independent of aspect ratio
+  const [prompt, setPrompt] = useState('')
+  const [batchCount, setBatchCount] = useState(2)
+  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000))
+  const [initialized, setInitialized] = useState(false)
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const settings = loadFlowInputSettings();
-    setAspectRatioIndex(settings.aspectRatioIndex);
-    setResolutionIndex(settings.resolutionIndex);
-    setPrompt(settings.prompt);
-    setInitialized(true);
-  }, []);
+    const settings = loadFlowInputSettings()
+    setAspectRatioIndex(settings.aspectRatioIndex)
+    setResolutionIndex(settings.resolutionIndex)
+    setPrompt(settings.prompt)
+    setInitialized(true)
+  }, [])
 
   // Save settings to localStorage when they change
   const saveSettings = useCallback(() => {
-    if (!initialized) return;
+    if (!initialized) return
     saveFlowInputSettings({
       aspectRatioIndex,
       resolutionIndex,
       prompt,
-    });
-  }, [aspectRatioIndex, resolutionIndex, prompt, initialized]);
+    })
+  }, [aspectRatioIndex, resolutionIndex, prompt, initialized])
 
   useEffect(() => {
-    saveSettings();
-  }, [saveSettings]);
+    saveSettings()
+  }, [saveSettings])
 
-  const currentAspectRatio = ASPECT_RATIOS[aspectRatioIndex];
+  const currentAspectRatio = ASPECT_RATIOS[aspectRatioIndex]
   // Use resolutionIndex directly - each aspect ratio has presets[0]=1K and presets[1]=2K
-  const currentResolution = currentAspectRatio.presets[resolutionIndex];
+  const currentResolution = currentAspectRatio.presets[resolutionIndex]
 
   const handleSubmit = () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) return
     onSubmit({
       prompt: prompt.trim(),
       width: currentResolution.w,
       height: currentResolution.h,
       batchCount,
       seed,
-    });
-    setPrompt("");
+    })
+    setPrompt('')
     // Also save cleared prompt to localStorage
     saveFlowInputSettings({
       aspectRatioIndex,
       resolutionIndex,
-      prompt: "",
-    });
-  };
+      prompt: '',
+    })
+  }
 
   const cycleAspectRatio = () => {
-    setAspectRatioIndex((prev) => (prev + 1) % ASPECT_RATIOS.length);
+    setAspectRatioIndex((prev) => (prev + 1) % ASPECT_RATIOS.length)
     // Don't reset resolutionIndex - keep it independent
-  };
+  }
 
   const cycleResolution = () => {
     // All aspect ratios have 2 presets: [0]=1K, [1]=2K
-    setResolutionIndex((prev) => (prev + 1) % 2);
-  };
+    setResolutionIndex((prev) => (prev + 1) % 2)
+  }
 
   const cycleBatchCount = () => {
-    setBatchCount((prev) => (prev % 4) + 1);
-  };
+    setBatchCount((prev) => (prev % 4) + 1)
+  }
 
   const randomizeSeed = () => {
-    setSeed(Math.floor(Math.random() * 100000));
-  };
+    setSeed(Math.floor(Math.random() * 100000))
+  }
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-50 flex items-end gap-3">
@@ -109,9 +103,7 @@ export default function FloatingInput({
             onClick={cycleResolution}
             className="bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded-full px-3 py-0.5 text-xs font-normal cursor-pointer"
           >
-            {currentResolution.w >= 2048 || currentResolution.h >= 2048
-              ? "2K"
-              : "1K"}
+            {currentResolution.w >= 2048 || currentResolution.h >= 2048 ? '2K' : '1K'}
           </Badge>
           <Badge
             variant="secondary"
@@ -129,9 +121,9 @@ export default function FloatingInput({
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit();
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSubmit()
             }
           }}
           rows={3}
@@ -168,5 +160,5 @@ export default function FloatingInput({
         <Zap className="text-white fill-white" size={22} />
       </button>
     </div>
-  );
+  )
 }

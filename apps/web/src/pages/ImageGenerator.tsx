@@ -1,9 +1,9 @@
-import { useImageGenerator } from "@/hooks/useImageGenerator";
-import { Header } from "@/components/feature/Header";
-import { ApiConfigAccordion } from "@/components/feature/ApiConfigAccordion";
-import { PromptCard } from "@/components/feature/PromptCard";
-import { ImageResultCard } from "@/components/feature/ImageResultCard";
-import { StatusCard } from "@/components/feature/StatusCard";
+import { useImageGenerator } from '@/hooks/useImageGenerator'
+import { Header } from '@/components/feature/Header'
+import { ApiConfigAccordion } from '@/components/feature/ApiConfigAccordion'
+import { PromptCard } from '@/components/feature/PromptCard'
+import { ImageResultCard } from '@/components/feature/ImageResultCard'
+import { StatusCard } from '@/components/feature/StatusCard'
 
 export default function ImageGenerator() {
   const {
@@ -43,7 +43,7 @@ export default function ImageGenerator() {
     handleUpscale,
     handleDelete,
     handleGenerate,
-  } = useImageGenerator();
+  } = useImageGenerator()
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -111,5 +111,5 @@ export default function ImageGenerator() {
         </div>
       </div>
     </div>
-  );
+  )
 }

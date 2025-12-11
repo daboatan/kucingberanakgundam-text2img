@@ -1,17 +1,17 @@
-import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { User } from "lucide-react";
+import { memo } from 'react'
+import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { User } from 'lucide-react'
 
 export type UserPromptNodeData = {
-  prompt: string;
-  timestamp: string;
-  width: number;
-  height: number;
-  batchCount: number;
-};
+  prompt: string
+  timestamp: string
+  width: number
+  height: number
+  batchCount: number
+}
 
 function UserPromptNode({ data }: NodeProps) {
-  const { prompt, timestamp, width, height, batchCount } = data as UserPromptNodeData;
+  const { prompt, timestamp, width, height, batchCount } = data as UserPromptNodeData
 
   return (
     <div className="bg-zinc-800 rounded-2xl px-4 py-3 w-[280px] shadow-lg">
@@ -23,7 +23,9 @@ function UserPromptNode({ data }: NodeProps) {
         </div>
         <span className="text-zinc-500 text-xs">{timestamp}</span>
         <span className="text-zinc-600 text-xs">|</span>
-        <span className="text-zinc-500 text-xs">{width}x{height}</span>
+        <span className="text-zinc-500 text-xs">
+          {width}x{height}
+        </span>
         <span className="text-zinc-500 text-xs">x{batchCount}</span>
       </div>
 
@@ -33,7 +35,7 @@ function UserPromptNode({ data }: NodeProps) {
 
       <Handle type="source" position={Position.Bottom} className="bg-orange-500!" />
     </div>
-  );
+  )
 }
 
-export default memo(UserPromptNode);
+export default memo(UserPromptNode)

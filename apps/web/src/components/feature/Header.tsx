@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Link } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 
 export function Header() {
   return (
@@ -16,5 +16,5 @@ export function Header() {
         Try Flow Mode (Experimental)
       </Link>
     </div>
-  );
+  )
 }

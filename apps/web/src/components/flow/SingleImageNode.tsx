@@ -1,13 +1,13 @@
-import { memo, useEffect, useState, useRef } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Loader2 } from "lucide-react";
-import { decryptFromStore } from "@/lib/crypto";
+import { memo, useEffect, useState, useRef } from 'react'
+import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Loader2 } from 'lucide-react'
+import { decryptFromStore } from '@/lib/crypto'
 
 export type SingleImageNodeData = {
-  prompt: string;
-  width: number;
-  height: number;
-};
+  prompt: string
+  width: number
+  height: number
+}
 
 async function generateImage(
   prompt: string,
@@ -15,73 +15,70 @@ async function generateImage(
   width: number,
   height: number
 ): Promise<string> {
-  const res = await fetch(
-    `${import.meta.env.VITE_API_URL || ""}/api/generate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-      body: JSON.stringify({
-        prompt,
-        negative_prompt: "",
-        model: "z-image-turbo",
-        width,
-        height,
-        num_inference_steps: 9,
-      }),
-    }
-  );
+  const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    },
+    body: JSON.stringify({
+      prompt,
+      negative_prompt: '',
+      model: 'z-image-turbo',
+      width,
+      height,
+      num_inference_steps: 9,
+    }),
+  })
 
-  const text = await res.text();
-  if (!text) throw new Error("Empty response from server");
+  const text = await res.text()
+  if (!text) throw new Error('Empty response from server')
 
-  let data;
+  let data
   try {
-    data = JSON.parse(text);
+    data = JSON.parse(text)
   } catch {
-    throw new Error(`Invalid response: ${text.slice(0, 100)}`);
+    throw new Error(`Invalid response: ${text.slice(0, 100)}`)
   }
 
-  if (!res.ok) throw new Error(data.error || "Failed to generate");
-  return data.url || `data:image/png;base64,${data.b64_json}`;
+  if (!res.ok) throw new Error(data.error || 'Failed to generate')
+  return data.url || `data:image/png;base64,${data.b64_json}`
 }
 
 function SingleImageNode({ data }: NodeProps) {
-  const { prompt, width, height } = data as SingleImageNodeData;
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const generatingRef = useRef(false);
+  const { prompt, width, height } = data as SingleImageNodeData
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [apiKey, setApiKey] = useState<string | null>(null)
+  const generatingRef = useRef(false)
 
   useEffect(() => {
-    decryptFromStore().then((key) => setApiKey(key || null));
-  }, []);
+    decryptFromStore().then((key) => setApiKey(key || null))
+  }, [])
 
   useEffect(() => {
-    if (apiKey === null) return;
+    if (apiKey === null) return
     if (!apiKey) {
-      setLoading(false);
-      setError("No API Key");
-      return;
+      setLoading(false)
+      setError('No API Key')
+      return
     }
 
     // Prevent double execution from React StrictMode
-    if (generatingRef.current) return;
-    generatingRef.current = true;
+    if (generatingRef.current) return
+    generatingRef.current = true
 
     generateImage(prompt, apiKey, width, height)
       .then((url) => {
-        setImageUrl(url);
-        setLoading(false);
+        setImageUrl(url)
+        setLoading(false)
       })
       .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [apiKey, prompt, width, height]);
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [apiKey, prompt, width, height])
 
   return (
     <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-xl p-3 shadow-2xl">
@@ -103,7 +100,7 @@ function SingleImageNode({ data }: NodeProps) {
 
       <Handle type="source" position={Position.Bottom} className="!bg-zinc-600" />
     </div>
-  );
+  )
 }
 
-export default memo(SingleImageNode);
+export default memo(SingleImageNode)

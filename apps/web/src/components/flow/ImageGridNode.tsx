@@ -1,20 +1,20 @@
-import { memo, useEffect, useState, useRef } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { decryptFromStore } from "@/lib/crypto";
+import { memo, useEffect, useState, useRef } from 'react'
+import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
+import { decryptFromStore } from '@/lib/crypto'
 
 export type ImageGridNodeData = {
-  prompt: string;
-  width?: number;
-  height?: number;
-};
+  prompt: string
+  width?: number
+  height?: number
+}
 
 type ImageSlot = {
-  url: string | null;
-  loading: boolean;
-  error: string | null;
-};
+  url: string | null
+  loading: boolean
+  error: string | null
+}
 
 async function generateImage(
   prompt: string,
@@ -22,83 +22,78 @@ async function generateImage(
   width: number,
   height: number
 ): Promise<string> {
-  const res = await fetch(
-    `${import.meta.env.VITE_API_URL || ""}/api/generate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-      body: JSON.stringify({
-        prompt,
-        negative_prompt: "",
-        model: "z-image-turbo",
-        width,
-        height,
-        num_inference_steps: 9,
-      }),
-    }
-  );
+  const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    },
+    body: JSON.stringify({
+      prompt,
+      negative_prompt: '',
+      model: 'z-image-turbo',
+      width,
+      height,
+      num_inference_steps: 9,
+    }),
+  })
 
-  const text = await res.text();
-  if (!text) throw new Error("Empty response from server");
+  const text = await res.text()
+  if (!text) throw new Error('Empty response from server')
 
-  let data;
+  let data
   try {
-    data = JSON.parse(text);
+    data = JSON.parse(text)
   } catch {
-    throw new Error(`Invalid response: ${text.slice(0, 100)}`);
+    throw new Error(`Invalid response: ${text.slice(0, 100)}`)
   }
 
-  if (!res.ok) throw new Error(data.error || "Failed to generate");
-  return data.url || `data:image/png;base64,${data.b64_json}`;
+  if (!res.ok) throw new Error(data.error || 'Failed to generate')
+  return data.url || `data:image/png;base64,${data.b64_json}`
 }
 
 function ImageGridNode({ data }: NodeProps) {
-  const { prompt, width = 512, height = 512 } = data as ImageGridNodeData;
+  const { prompt, width = 512, height = 512 } = data as ImageGridNodeData
   const [slots, setSlots] = useState<ImageSlot[]>(
     Array(4).fill({ url: null, loading: true, error: null })
-  );
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const generatingRef = useRef(false);
+  )
+  const [apiKey, setApiKey] = useState<string | null>(null)
+  const generatingRef = useRef(false)
 
   useEffect(() => {
-    decryptFromStore().then((key) => setApiKey(key || null));
-  }, []);
+    decryptFromStore().then((key) => setApiKey(key || null))
+  }, [])
 
   useEffect(() => {
-    if (apiKey === null) return;
+    if (apiKey === null) return
     if (!apiKey) {
-      setSlots(
-        Array(4).fill({ url: null, loading: false, error: "No API Key" })
-      );
-      return;
+      setSlots(Array(4).fill({ url: null, loading: false, error: 'No API Key' }))
+      return
     }
 
     // Prevent double execution from React StrictMode
-    if (generatingRef.current) return;
-    generatingRef.current = true;
+    if (generatingRef.current) return
+    generatingRef.current = true
 
     // Launch 4 concurrent requests
     for (let i = 0; i < 4; i++) {
       generateImage(prompt, apiKey, width, height)
         .then((url) => {
           setSlots((prev) => {
-            const next = [...prev];
-            next[i] = { url, loading: false, error: null };
-            return next;
-          });
+            const next = [...prev]
+            next[i] = { url, loading: false, error: null }
+            return next
+          })
         })
         .catch((err) => {
           setSlots((prev) => {
-            const next = [...prev];
-            next[i] = { url: null, loading: false, error: err.message };
-            return next;
-          });
-        });
+            const next = [...prev]
+            next[i] = { url: null, loading: false, error: err.message }
+            return next
+          })
+        })
     }
-  }, [apiKey, prompt, width, height]);
+  }, [apiKey, prompt, width, height])
 
   return (
     <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-xl p-4 min-w-[320px] shadow-2xl">
@@ -120,9 +115,7 @@ function ImageGridNode({ data }: NodeProps) {
               </div>
             ) : slot.error ? (
               <div className="w-full h-full flex items-center justify-center p-2">
-                <span className="text-red-400 text-xs text-center">
-                  {slot.error}
-                </span>
+                <span className="text-red-400 text-xs text-center">{slot.error}</span>
               </div>
             ) : (
               <img
@@ -135,13 +128,9 @@ function ImageGridNode({ data }: NodeProps) {
         ))}
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!bg-zinc-600"
-      />
+      <Handle type="source" position={Position.Bottom} className="!bg-zinc-600" />
     </div>
-  );
+  )
 }
 
-export default memo(ImageGridNode);
+export default memo(ImageGridNode)

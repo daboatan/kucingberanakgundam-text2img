@@ -1,17 +1,17 @@
-import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { ImageIcon } from "lucide-react";
+import { memo } from 'react'
+import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { ImageIcon } from 'lucide-react'
 
 export type PromptConfigNodeData = {
-  prompt: string;
-  width: number;
-  height: number;
-  model: string;
-  batchCount: number;
-};
+  prompt: string
+  width: number
+  height: number
+  model: string
+  batchCount: number
+}
 
 function PromptConfigNode({ data }: NodeProps) {
-  const { prompt, width, height, model, batchCount } = data as PromptConfigNodeData;
+  const { prompt, width, height, model, batchCount } = data as PromptConfigNodeData
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 min-w-[280px] shadow-2xl">
@@ -19,7 +19,9 @@ function PromptConfigNode({ data }: NodeProps) {
         <ImageIcon size={14} />
         <span>{model}</span>
         <span className="text-zinc-600">•</span>
-        <span>{width}x{height}</span>
+        <span>
+          {width}x{height}
+        </span>
         <span className="text-zinc-600">•</span>
         <span>x{batchCount}</span>
       </div>
@@ -28,7 +30,7 @@ function PromptConfigNode({ data }: NodeProps) {
 
       <Handle type="source" position={Position.Bottom} className="!bg-emerald-500" />
     </div>
-  );
+  )
 }
 
-export default memo(PromptConfigNode);
+export default memo(PromptConfigNode)
