@@ -2,7 +2,6 @@
  * Netlify Functions - API Handler
  */
 
-import { Hono } from 'hono'
 import { handle } from 'hono/aws-lambda'
 import { createApp } from '../../../api/src/app'
 
