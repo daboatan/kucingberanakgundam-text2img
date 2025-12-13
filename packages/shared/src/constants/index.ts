@@ -1,8 +1,8 @@
 // Provider 配置
-export * from './providers'
 
 // 模型配置
 export * from './models'
+export * from './providers'
 
 // 宽高比配置
 export * from './ratios'

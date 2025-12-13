@@ -1,3 +1,4 @@
+import { Loader2, RotateCcw, Sparkles } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
@@ -11,7 +12,6 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ASPECT_RATIOS, type AspectRatio } from '@/lib/constants'
-import { Loader2, RotateCcw, Sparkles } from 'lucide-react'
 
 interface PromptCardProps {
   prompt: string

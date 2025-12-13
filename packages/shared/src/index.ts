@@ -4,11 +4,10 @@
  * Shared types, constants, and utilities
  */
 
-// Type definitions
-export * from './types'
-
 // Constants
 export * from './constants'
+// Type definitions
+export * from './types'
 
 // Utilities
 export * from './utils'

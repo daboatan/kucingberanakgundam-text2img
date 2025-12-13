@@ -1,8 +1,8 @@
-import { type ProviderType, loadSettings } from '@/lib/constants'
-import { loadAllTokens } from '@/lib/crypto'
 import { Handle, type NodeProps, Position } from '@xyflow/react'
 import { Download, Eye, EyeOff, Sparkles, Trash2 } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
+import { loadSettings, type ProviderType } from '@/lib/constants'
+import { loadAllTokens } from '@/lib/crypto'
 
 import type { GeneratedImage } from '@/lib/flow-storage'
 

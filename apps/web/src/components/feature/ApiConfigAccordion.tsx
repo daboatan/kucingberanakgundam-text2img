@@ -1,3 +1,5 @@
+import type { ModelConfig } from '@z-image/shared'
+import { Settings } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
@@ -14,8 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { PROVIDER_CONFIGS, PROVIDER_OPTIONS, type ProviderType } from '@/lib/constants'
-import type { ModelConfig } from '@z-image/shared'
-import { Settings } from 'lucide-react'
 
 interface ApiConfigAccordionProps {
   provider: ProviderType

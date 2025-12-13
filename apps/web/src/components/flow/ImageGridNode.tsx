@@ -1,8 +1,8 @@
-import { decryptTokenFromStore } from '@/lib/crypto'
 import { Handle, type NodeProps, Position } from '@xyflow/react'
 import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
+import { decryptTokenFromStore } from '@/lib/crypto'
 
 export type ImageGridNodeData = {
   prompt: string

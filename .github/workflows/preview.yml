@@ -2,6 +2,8 @@
 #
 # Deploys PR previews to Cloudflare Pages
 # Comments preview URL on the PR
+#
+# Note: Skips Dependabot PRs as secrets are not available
 
 name: Preview
 
@@ -17,7 +19,10 @@ jobs:
   preview:
     name: Deploy Preview
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
+    # Skip draft PRs and Dependabot PRs (secrets not available)
+    if: |
+      github.event.pull_request.draft == false &&
+      github.actor != 'dependabot[bot]'
 
     permissions:
       contents: read

@@ -4,22 +4,22 @@
  * Core state management and API calls for image generation
  */
 
+import type { ImageDetails } from '@z-image/shared'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { generateImage, upscaleImage } from '@/lib/api'
 import {
   ASPECT_RATIOS,
   DEFAULT_NEGATIVE_PROMPT,
   DEFAULT_PROMPT,
-  PROVIDER_CONFIGS,
-  type ProviderType,
   getDefaultModel,
   getModelsByProvider,
   loadSettings,
+  PROVIDER_CONFIGS,
+  type ProviderType,
   saveSettings,
 } from '@/lib/constants'
 import { encryptAndStoreToken, loadAllTokens } from '@/lib/crypto'
-import type { ImageDetails } from '@z-image/shared'
-import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 const IMAGE_DETAILS_KEY = 'lastImageDetails'
 

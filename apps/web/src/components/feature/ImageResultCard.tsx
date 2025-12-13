@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ImageDetails } from '@z-image/shared'
 import { Download, Eye, EyeOff, ImageIcon, Info, Loader2, Trash2 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ImageResultCardProps {
   imageDetails: ImageDetails | null

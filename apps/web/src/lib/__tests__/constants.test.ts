@@ -6,10 +6,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   ASPECT_RATIOS,
-  PROVIDER_OPTIONS,
-  STORAGE_KEY,
   getDefaultModel,
   loadSettings,
+  PROVIDER_OPTIONS,
+  STORAGE_KEY,
   saveSettings,
 } from '../constants'
 

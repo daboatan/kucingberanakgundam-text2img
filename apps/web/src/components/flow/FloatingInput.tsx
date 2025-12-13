@@ -1,8 +1,8 @@
+import { ImageIcon, RefreshCw, Sparkles, Zap } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { ASPECT_RATIOS } from '@/lib/constants'
 import { loadFlowInputSettings, saveFlowInputSettings } from '@/lib/flow-storage'
-import { ImageIcon, RefreshCw, Sparkles, Zap } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
 
 interface FloatingInputProps {
   onSubmit: (config: {

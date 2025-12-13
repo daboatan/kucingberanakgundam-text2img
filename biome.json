@@ -1,13 +1,11 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
@@ -43,9 +41,15 @@
       "indentWidth": 2
     }
   },
+  "css": {
+    "parser": {
+      "cssModules": true,
+      "tailwindDirectives": true
+    }
+  },
   "overrides": [
     {
-      "include": ["*.jsonc", "tsconfig.json", "tsconfig.*.json"],
+      "includes": ["**/*.jsonc", "**/tsconfig.json", "**/tsconfig.*.json"],
       "json": {
         "parser": {
           "allowComments": true,
@@ -55,14 +59,15 @@
     }
   ],
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".turbo",
-      "coverage",
-      "*.min.js",
-      "pnpm-lock.yaml",
-      ".wrangler"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.turbo",
+      "!**/coverage",
+      "!**/*.min.js",
+      "!**/pnpm-lock.yaml",
+      "!**/.wrangler"
     ]
   }
 }

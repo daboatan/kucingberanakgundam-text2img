@@ -1,4 +1,5 @@
 import {
+  addEdge,
   Background,
   BackgroundVariant,
   type Connection,
@@ -7,34 +8,33 @@ import {
   type Node,
   ReactFlow,
   ReactFlowProvider,
-  addEdge,
   useEdgesState,
   useNodesState,
   useReactFlow,
 } from '@xyflow/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import '@xyflow/react/dist/style.css'
+import { ArrowLeft, Download, Settings, Trash2, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { ApiConfigAccordion } from '@/components/feature/ApiConfigAccordion'
 import AIResultNode, { type AIResultNodeData } from '@/components/flow/AIResultNode'
 import FloatingInput from '@/components/flow/FloatingInput'
-import UserPromptNode, { type UserPromptNodeData } from '@/components/flow/UserPromptNode'
 import { getLayoutedElements } from '@/components/flow/layout'
+import UserPromptNode, { type UserPromptNodeData } from '@/components/flow/UserPromptNode'
 import {
-  type ProviderType,
   getDefaultModel,
   getModelsByProvider,
   loadSettings,
+  type ProviderType,
   saveSettings,
 } from '@/lib/constants'
 import { encryptAndStoreToken, loadAllTokens } from '@/lib/crypto'
 import {
-  type GeneratedImage,
   clearFlowState,
+  type GeneratedImage,
   loadFlowState,
   saveFlowState,
 } from '@/lib/flow-storage'
-import { ArrowLeft, Download, Settings, Trash2, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 const nodeTypes = {
   userPrompt: UserPromptNode,

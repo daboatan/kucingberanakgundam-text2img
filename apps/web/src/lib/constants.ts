@@ -7,11 +7,11 @@
 
 import {
   type AspectRatioConfig,
+  getModelsByProvider,
   MODEL_CONFIGS,
   PROVIDER_CONFIGS,
   type ProviderType,
   ASPECT_RATIOS as SHARED_ASPECT_RATIOS,
-  getModelsByProvider,
 } from '@z-image/shared'
 import { RectangleHorizontal, RectangleVertical, Square } from 'lucide-react'
 
