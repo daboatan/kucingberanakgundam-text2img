@@ -166,7 +166,7 @@ describe('getDefaultModel', () => {
 
   it('should return fallback for unknown provider', () => {
     // TypeScript would catch this, but testing runtime behavior
-    const model = getDefaultModel('unknown' as any)
+    const model = getDefaultModel('unknown' as unknown as Parameters<typeof getDefaultModel>[0])
     expect(model).toBe('z-image-turbo')
   })
 })
