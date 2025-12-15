@@ -232,6 +232,18 @@ export function useImageGenerator() {
       if (!details?.url) throw new Error('No image returned')
       addStatus(`Image generated in ${details.duration}!`)
 
+      // Convert HuggingFace temporary URLs to blob URLs to prevent expiration
+      if (details.url.includes('.hf.space') && details.url.startsWith('http')) {
+        try {
+          addStatus('Caching image...')
+          const response = await fetch(details.url)
+          const blob = await response.blob()
+          details.url = URL.createObjectURL(blob)
+        } catch (e) {
+          console.warn('Failed to cache HF image:', e)
+        }
+      }
+
       // Auto upscale to 8K if enabled
       if (upscale8k && details.url.startsWith('http')) {
         addStatus('Upscaling to 8K...')
