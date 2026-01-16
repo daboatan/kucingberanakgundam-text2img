@@ -1,6 +1,7 @@
 <div align="center">
 
-# Zenith Image Generator
+# Kucing Beranak Gundam Text2Img
+based from WuMingDao's zenith-image-generator
 
 **Modern Text-to-Image Generation Web App**
 
