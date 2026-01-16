@@ -653,27 +653,43 @@ function createApiApp(config: AppConfig = {}) {
 
   app.get('/proxy-image', async (c) => {
     const url = c.req.query('url')
+    const requestId = c.get('requestId') || 'unknown'
 
     if (!url || typeof url !== 'string') {
       return sendError(c, Errors.invalidParams('url', 'url query parameter is required'))
     }
 
     if (!isAllowedImageUrl(url)) {
+      console.warn(`[${requestId}] Proxy image URL not allowed: ${url}`)
       return sendError(c, Errors.invalidParams('url', 'URL not allowed'))
     }
 
     try {
-      const response = await fetch(url)
+      console.log(`[${requestId}] Fetching image: ${url}`)
+      
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(30000), // 30 second timeout
+      })
+      
       if (!response.ok) {
+        console.error(
+          `[${requestId}] Failed to fetch image. Status: ${response.status}, URL: ${url}`
+        )
         return sendError(
           c,
-          Errors.generationFailed('Image Proxy', `Failed to fetch image: ${response.status}`)
+          Errors.generationFailed(
+            'Image Proxy',
+            `Failed to fetch image: HTTP ${response.status}`
+          )
         )
       }
 
       // Check content length before streaming
       const contentLength = response.headers.get('content-length')
       if (contentLength && Number.parseInt(contentLength, 10) > MAX_PROXY_IMAGE_SIZE) {
+        console.warn(
+          `[${requestId}] Image too large: ${contentLength} bytes (max: ${MAX_PROXY_IMAGE_SIZE})`
+        )
         return sendError(
           c,
           Errors.invalidParams(
@@ -684,6 +700,7 @@ function createApiApp(config: AppConfig = {}) {
       }
 
       const contentType = response.headers.get('content-type') || 'image/png'
+      console.log(`[${requestId}] Image fetched successfully. Type: ${contentType}, Size: ${contentLength}`)
 
       // Use streaming response to avoid loading entire image into memory
       return new Response(response.body, {
@@ -694,6 +711,14 @@ function createApiApp(config: AppConfig = {}) {
         },
       })
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      console.error(`[${requestId}] Proxy image error: ${errorMsg}. URL: ${url}`)
+      
+      // Return more specific error for timeout
+      if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+        return sendError(c, Errors.timeout('Image Proxy'))
+      }
+      
       return sendError(c, err)
     }
   })

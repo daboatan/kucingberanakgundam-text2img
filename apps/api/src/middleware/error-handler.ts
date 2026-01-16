@@ -55,10 +55,12 @@ function sanitizeErrorForLogging(err: unknown): { name: string; message: string;
 export const errorHandler: ErrorHandler = (err, c) => {
   // Log error with request ID if available
   const requestId = c.get('requestId') || 'unknown'
+  const method = c.req.method
+  const path = c.req.path
 
   // Sanitize error to prevent logging sensitive information (e.g., API keys in error messages)
   const safeError = sanitizeErrorForLogging(err)
-  console.error(`[${requestId}] Unhandled error:`, safeError)
+  console.error(`[${requestId}] ${method} ${path} - Unhandled error:`, safeError)
 
   return sendError(c, err)
 }
