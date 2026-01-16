@@ -7,18 +7,18 @@
     "delete": "Delete",
     "copy": "Copy",
     "api": "API",
-    "yes": "Yes",
-    "no": "No"
+    "yes": "Ya",
+    "no": "Tidak"
   },
   "header": {
-    "title": "ZENITH",
-    "subtitle": "AI-Powered Image Generation",
-    "tryFlowMode": "Try Flow Mode (Experimental)",
+    "title": "KUCING BERANAK GUNDAM",
+    "subtitle": "Adaptation from WuMingDao's zenith-image-generator | AI-Powered Image Generation",
+    "tryFlowMode": "Coba Mode Flow (Experimental)",
     "flowMode": "Flow Mode"
   },
   "prompt": {
     "title": "Prompt",
-    "placeholder": "Describe the image you want to create...",
+    "placeholder": "Dekripsikan gambar apa yang mau dibuat...",
     "advancedSettings": "Advanced Settings",
     "negativePrompt": "Negative Prompt",
     "inferenceSteps": "Inference Steps: {{steps}}",
@@ -29,15 +29,15 @@
     "height": "Height: {{height}}px",
     "widthLabel": "Width",
     "heightLabel": "Height",
-    "generate": "Generate Image",
-    "generating": "Generating...",
+    "generate": "Buat Gambar",
+    "generating": "Lagi Membuat...",
     "translate": "Translate",
-    "translateToEnglish": "Translate to English",
+    "translateToEnglish": "Translate ke English",
     "optimize": "Optimize",
     "optimizePrompt": "Optimize prompt"
   },
   "result": {
-    "title": "Result",
+    "title": "Hasil",
     "details": "Details",
     "upscale4x": "4x Upscale",
     "upscaling": "Upscaling...",

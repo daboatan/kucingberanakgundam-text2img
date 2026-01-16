@@ -22,7 +22,7 @@ export const LLM_PROVIDER_CONFIGS: Record<LLMProviderType, LLMProviderConfig> = 
   'huggingface-llm': {
     id: 'huggingface-llm',
     name: 'HuggingFace',
-    url: 'https://api-inference.huggingface.co/models',
+    url: 'https://router.huggingface.co/hf-inference/models', //url: 'https://api-inference.huggingface.co/models',
     defaultModel: 'Qwen/Qwen2.5-72B-Instruct',
     needsAuth: false, // Optional but recommended
     authHeader: 'X-HF-Token', // Reuse same auth header as image generation
