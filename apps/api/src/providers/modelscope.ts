@@ -119,6 +119,7 @@ export class ModelScopeProvider implements ImageProvider {
         'X-ModelScope-Async-Mode': 'true',
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {
@@ -144,6 +145,7 @@ export class ModelScopeProvider implements ImageProvider {
           'Content-Type': 'application/json',
           'X-ModelScope-Task-Type': 'image_generation',
         },
+        signal: AbortSignal.timeout(10000), // 10 second timeout per request
       })
 
       if (!response.ok) {

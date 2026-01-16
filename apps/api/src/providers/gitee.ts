@@ -98,6 +98,7 @@ export class GiteeProvider implements ImageProvider {
         Authorization: `Bearer ${request.authToken.trim()}`,
       },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {
@@ -156,6 +157,7 @@ export async function createVideoTask(
       Authorization: `Bearer ${authToken.trim()}`,
     },
     body: formData,
+    signal: AbortSignal.timeout(10000), // 10 second timeout
   })
 
   if (!response.ok) {
@@ -174,6 +176,7 @@ export async function getVideoTaskStatus(
   const response = await fetch(`${GITEE_TASK_API}/${taskId}`, {
     headers: {
       Authorization: `Bearer ${authToken.trim()}`,
+    signal: AbortSignal.timeout(10000), // 10 second timeout
     },
   })
 

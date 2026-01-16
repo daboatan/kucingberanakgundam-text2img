@@ -38,6 +38,7 @@ export class PollinationsProvider implements LLMProvider {
         max_tokens: request.maxTokens || 1000,
         temperature: request.temperature ?? 0.7,
       }),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {

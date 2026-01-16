@@ -62,6 +62,7 @@ export class HuggingFaceLLMProvider implements LLMProvider {
           return_full_text: false,
         },
       }),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {

@@ -53,6 +53,7 @@ export class ModelScopeLLMProvider implements LLMProvider {
         temperature: request.temperature ?? 0.7,
         stream: false,
       }),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {
