@@ -56,28 +56,42 @@ Contains code shared between frontend and API:
 - `src/constants/` - Provider configs, model configs, aspect ratios
 - `src/utils/` - Validation utilities (prompt, dimensions, steps)
 
-### API Provider System
+### API Channel System
 
-The API uses a provider abstraction pattern:
+The API is organized by provider "channels" (single folder per provider) plus shared core infra:
 
-- `apps/api/src/providers/types.ts` - Provider interface definition
-- `apps/api/src/providers/gitee.ts` - Gitee AI implementation
-- `apps/api/src/providers/huggingface.ts` - HuggingFace implementation
-- `apps/api/src/providers/registry.ts` - Provider registration and lookup
+- `apps/api/src/core/types.ts` - Unified channel/capability types
+- `apps/api/src/core/channel-registry.ts` - Channel registry (in-memory)
+- `apps/api/src/core/token-manager.ts` - Token parsing + rotation (server-side)
+- `apps/api/src/core/openai-compat.ts` - OpenAI-compatible capability helpers
+- `apps/api/src/channels/index.ts` - Auto-register built-in channels (+ best-effort custom init)
+- `apps/api/src/channels/huggingface/*` - HF image (Gradio Spaces) + LLM (HF token optional, falls back to Pollinations)
+- `apps/api/src/channels/gitee/*` - Gitee image + LLM + video
+- `apps/api/src/channels/modelscope/*` - ModelScope image (async task mode) + LLM
+- `apps/api/src/channels/custom/*` - User-defined OpenAI-compatible channels (env-driven)
 
 ### Key Endpoints
 
-- `POST /api/generate` - Unified image generation endpoint
-  - Supports `provider` parameter: `"gitee"` | `"huggingface"`
-  - Requires `X-API-Key` header for Gitee AI
-  - Optional `X-HF-Token` header for HuggingFace
-- `POST /api/generate-hf` - Legacy HuggingFace endpoint (backward compatible)
-- `POST /api/upscale` - RealESRGAN 4x upscaling
+- `GET  /` - Health check
+- `GET  /v1/models` - OpenAI-compatible model list
+- `POST /v1/images/generations` - OpenAI-compatible image generation
+- `POST /v1/chat/completions` - OpenAI-compatible chat completions
+
+Authentication (OpenAI-style):
+
+- Header: `Authorization: Bearer <token>`
+- Optional provider hint prefix (kept for backward compatibility): `gitee:` / `ms:` / `hf:` / `deepseek:`
+- Multiple tokens supported: `Authorization: Bearer gitee:tok1,tok2,tok3` (server rotates on 429/quota errors)
+
+Custom channels:
+
+- Configure via env (`CUSTOM_CHANNELS_JSON` or `CUSTOM_CHANNEL_1_*`, etc.)
+- Use model id `custom/<channelId>/<model>` for both image + chat (routes resolve the channelId from the model string)
 
 ### Frontend Structure
 
 - `src/pages/ImageGenerator.tsx` - Main page with single image generation
-- `src/pages/FlowPage.tsx` - Visual canvas for batch generation using React Flow
+- `src/pages/FlowPageV2.tsx` - Visual canvas for batch generation using React Flow
 - `src/hooks/useImageGenerator.ts` - Core state management and API calls
 - `src/components/ui/` - shadcn/ui components
 - `src/components/feature/` - Feature-specific components (PromptCard, ImageResultCard, etc.)
@@ -92,6 +106,25 @@ The API uses a provider abstraction pattern:
 - Settings and API keys are persisted to localStorage (encrypted)
 - Flow mode persists nodes/edges/images to IndexedDB
 - API URL configured via `VITE_API_URL` env var (defaults to relative path for same-origin deployment)
+
+### Token Rotation System
+
+The app supports multiple API tokens per provider for automatic rotation on rate limits:
+
+- Frontend: `apps/web/src/lib/tokenRotation.ts` can rotate per-request (Flow mode)
+- Backend: `apps/api/src/core/token-manager.ts` rotates when multiple tokens are supplied in `Authorization`
+
+### Middleware Stack (API)
+
+Applied in order:
+
+1. `requestId` - Generates unique request ID for tracing
+2. `cors` - CORS headers with configurable origins
+3. `securityHeaders` - Security headers (CSP, X-Frame-Options, etc.)
+4. `requestLogger` - Logs requests with timing
+5. `timeout` - Request timeout (varies by endpoint: 30s-120s)
+6. `bodyLimit` - Request body size limit (20KB-50KB)
+7. `rateLimitPresets` - Rate limiting (5-60 req/min depending on endpoint)
 
 ### Tooling
 

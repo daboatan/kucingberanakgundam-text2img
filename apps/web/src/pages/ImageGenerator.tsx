@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Header } from '@/components/feature/Header'
+import { ImageHistory } from '@/components/feature/ImageHistory'
 import { ImageResultCard } from '@/components/feature/ImageResultCard'
 import { PromptCard } from '@/components/feature/PromptCard'
 import { SettingsModal } from '@/components/feature/SettingsModal'
@@ -8,8 +9,8 @@ import { useImageGenerator } from '@/hooks/useImageGenerator'
 
 export default function ImageGenerator() {
   const [showSettings, setShowSettings] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const {
-    tokens,
     currentToken,
     provider,
     model,
@@ -27,8 +28,6 @@ export default function ImageGenerator() {
     uhd,
     showInfo,
     isBlurred,
-    isUpscaled,
-    isUpscaling,
     isOptimizing,
     isTranslating,
     llmSettings,
@@ -53,18 +52,24 @@ export default function ImageGenerator() {
     handleRatioSelect,
     handleUhdToggle,
     handleDownload,
-    handleUpscale,
     handleDelete,
     handleGenerate,
+    handleLoadFromHistory,
     handleOptimize,
     handleTranslate,
+    historyId,
+    generatedAt,
   } = useImageGenerator()
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
-          <Header onSettingsClick={() => setShowSettings(true)} hasToken={!!currentToken} />
+          <Header
+            onSettingsClick={() => setShowSettings(true)}
+            onHistoryClick={() => setShowHistory(true)}
+            hasToken={!!currentToken}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Left Panel - Controls */}
@@ -101,14 +106,13 @@ export default function ImageGenerator() {
                 elapsed={elapsed}
                 showInfo={showInfo}
                 isBlurred={isBlurred}
-                isUpscaled={isUpscaled}
-                isUpscaling={isUpscaling}
-                giteeToken={tokens.gitee}
                 setShowInfo={setShowInfo}
                 setIsBlurred={setIsBlurred}
-                handleUpscale={handleUpscale}
                 handleDownload={handleDownload}
                 handleDelete={handleDelete}
+                onRegenerate={handleGenerate}
+                historyId={historyId}
+                generatedAt={generatedAt}
               />
 
               <StatusCard status={status} />
@@ -116,6 +120,12 @@ export default function ImageGenerator() {
           </div>
         </div>
       </div>
+
+      <ImageHistory
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        onSelect={handleLoadFromHistory}
+      />
 
       <SettingsModal
         isOpen={showSettings}

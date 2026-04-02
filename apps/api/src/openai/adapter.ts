@@ -5,11 +5,11 @@ import {
   validatePrompt,
   validateSteps,
 } from '@z-image/shared'
-import type { ProviderGenerateRequest, ProviderGenerateResult } from '../providers/types'
+import type { ImageRequest, ImageResult } from '../core/types'
 import type { OpenAIImageRequest, OpenAIImageResponse } from './types'
 
 export type OpenAIConvertedRequest = Pick<
-  ProviderGenerateRequest,
+  ImageRequest,
   'prompt' | 'negativePrompt' | 'width' | 'height' | 'steps' | 'seed' | 'guidanceScale'
 >
 
@@ -41,6 +41,14 @@ export function parseBearerToken(authHeader?: string): {
     const token = raw.slice('ms:'.length).trim()
     return token ? { providerHint: 'modelscope', token } : {}
   }
+  if (raw.startsWith('hf:')) {
+    const token = raw.slice('hf:'.length).trim()
+    return token ? { providerHint: 'huggingface', token } : {}
+  }
+  if (raw.startsWith('a4f:')) {
+    const token = raw.slice('a4f:'.length).trim()
+    return token ? { providerHint: 'a4f', token } : {}
+  }
 
   return { token: raw }
 }
@@ -57,7 +65,7 @@ export function convertRequest(req: OpenAIImageRequest): OpenAIConvertedRequest 
     throw Errors.invalidDimensions(dimensionsValidation.error || 'Invalid dimensions')
   }
 
-  const steps = req.steps ?? (req.quality === 'hd' ? 30 : undefined)
+  const steps = req.steps ?? req.num_inference_steps ?? (req.quality === 'hd' ? 30 : undefined)
   if (steps !== undefined) {
     const stepsValidation = validateSteps(steps)
     if (!stepsValidation.valid) {
@@ -72,11 +80,11 @@ export function convertRequest(req: OpenAIImageRequest): OpenAIConvertedRequest 
     height,
     steps,
     seed: req.seed,
-    guidanceScale: req.guidance_scale,
+    guidanceScale: req.guidance_scale ?? req.cfg_scale,
   }
 }
 
-export function convertResponse(result: ProviderGenerateResult): OpenAIImageResponse {
+export function convertResponse(result: ImageResult): OpenAIImageResponse {
   return {
     created: Math.floor(Date.now() / 1000),
     data: [{ url: result.url }],

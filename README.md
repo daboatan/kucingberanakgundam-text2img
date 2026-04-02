@@ -21,18 +21,15 @@ batch generation, and one-click deployment to Cloudflare Pages.
 
 ## Features
 
-- **Multiple AI Providers** - Gitee AI, HuggingFace Spaces, ModelScope
-- **Image-to-Video** - Generate videos from images (Gitee AI)
+- **Multiple AI Providers** - A4F, Gitee AI, HuggingFace Spaces, ModelScope
 - **Dark Mode UI** - Gradio-style with frosted glass effects
 - **Flexible Sizing** - Multiple aspect ratios (1:1, 16:9, 9:16, 4:3, etc.)
-- **4x Upscaling** - RealESRGAN integration
 - **Secure Storage** - API keys encrypted with AES-256-GCM
 - **Token Rotation** - Multiple API keys with automatic failover on rate limits
+- **History (Lightweight)** - Stores metadata (URL + params) in localStorage with 24h TTL
 - **Flow Mode** - Visual canvas for batch generation (experimental)
-  - Local image caching with IndexedDB blob storage
-  - Dual limits: 500 images or 4GB max storage
-  - LRU cleanup with user confirmation before deletion
-  - Download all images before cleanup
+  - Images are referenced by remote URLs (no blob caching)
+  - Flow state is persisted locally
 
 ## Token Rotation
 
@@ -62,6 +59,18 @@ token_1, token_2, token_3
 
 - Node.js 18+ / pnpm 9+
 - [Gitee AI API Key](https://ai.gitee.com)
+- [A4F API Key](https://www.a4f.co) (optional)
+
+### A4F (api.a4f.co) API Key
+
+1. Register / login at https://www.a4f.co/
+2. Create an API key in the A4F dashboard (see docs): https://www.a4f.co/docs
+3. In Zenith Settings, select provider `A4F` and paste the key into the Token field
+
+Notes:
+
+- A4F requires a provider-prefixed model id (e.g. `provider-4/imagen-3.5`). Zenith exposes these in the model dropdown.
+- If you call the OpenAI-compatible endpoint directly, use `model: "a4f/provider-4/imagen-3.5"` and `Authorization: Bearer a4f:<token>`.
 
 ### One-Click Deploy
 
@@ -94,14 +103,31 @@ Open `http://localhost:5173`
 
 ## API Usage
 
-After deployment, you can call the API directly:
+After deployment, you can call the OpenAI-format API directly:
 
 ```bash
-curl -X POST https://your-project.pages.dev/api/generate \
+curl -X POST https://your-project.pages.dev/v1/images/generations \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: your-gitee-api-key" \
-  -d '{"prompt": "a cute cat", "width": 1024, "height": 1024}'
+  -H "Authorization: Bearer gitee:your-gitee-api-key" \
+  -d '{
+    "model": "gitee/z-image-turbo",
+    "prompt": "a cute cat",
+    "size": "1024x1024",
+    "steps": 9,
+    "n": 1,
+    "response_format": "url"
+  }'
 ```
+
+Notes:
+
+- The API returns the **raw provider image URL** (e.g. HuggingFace Space `gradio_api/file=...`).
+- Some provider URLs are **temporary** (HF Space files often expire around 24 hours).
+- Provider routing is via the `model` prefix:
+  - `a4f/...` -> A4F (`Authorization: Bearer a4f:...`)
+  - `gitee/...` -> Gitee AI (`Authorization: Bearer gitee:...`)
+  - `ms/...` -> ModelScope (`Authorization: Bearer ms:...`)
+  - no prefix -> HuggingFace (token optional; `Authorization: Bearer <token>` or `Authorization: Bearer hf:<token>`)
 
 📖 **[Full API Reference](./docs/en/API.md)** - Providers, parameters, code examples
 

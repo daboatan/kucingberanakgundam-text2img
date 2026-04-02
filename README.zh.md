@@ -20,13 +20,12 @@
 
 ## 功能特性
 
-- **多 AI 提供商** - Gitee AI、HuggingFace Spaces、ModelScope
-- **图片转视频** - 从图片生成视频 (Gitee AI)
+- **多 AI 提供商** - A4F、Gitee AI、HuggingFace Spaces、ModelScope
 - **深色模式 UI** - Gradio 风格毛玻璃效果
 - **灵活尺寸** - 多种宽高比 (1:1, 16:9, 9:16, 4:3 等)
-- **4x 放大** - RealESRGAN 集成
 - **安全存储** - API Key 使用 AES-256-GCM 加密
 - **Token 轮询** - 多 API Key 自动切换，遇到限流自动换用下一个
+- **历史记录（轻量）** - 仅存元数据（URL + 参数）到 localStorage，24 小时自动过期清理
 - **Flow 模式** - 可视化批量生成画布 (实验性)
 
 ## Token 轮询
@@ -57,6 +56,18 @@ token_1, token_2, token_3
 
 - Node.js 18+ / pnpm 9+
 - [Gitee AI API Key](https://ai.gitee.com)
+- [A4F API Key](https://www.a4f.co)（可选）
+
+### A4F（api.a4f.co）渠道：注册获取 API Key
+
+1. 打开 https://www.a4f.co/ 注册/登录
+2. 在 A4F 控制台创建 API Key（参考官方文档）：https://www.a4f.co/docs
+3. 在 Zenith 设置中选择服务商 `A4F`，把 API Key 粘贴到 Token 输入框
+
+说明：
+
+- A4F 的模型必须带 provider 前缀（例如 `provider-4/imagen-3.5`），Zenith 已在模型下拉框内提供可用项。
+- 如直接调用 OpenAI 兼容接口，请使用 `model: "a4f/provider-4/imagen-3.5"`，并在请求头中使用 `Authorization: Bearer a4f:<token>`。
 
 ### 一键部署
 
@@ -92,6 +103,37 @@ pnpm dev:web
 | [贡献指南](./docs/zh/CONTRIBUTING.md) | 本地配置、局域网访问、开发       |
 | [部署指南](./docs/zh/DEPLOYMENT.md)   | Cloudflare、Vercel、Netlify 教程 |
 | [API 参考](./docs/zh/API.md)          | 接口、参数、代码示例             |
+
+补充说明：
+
+- 接口返回的是**原始图片 URL**（例如 HuggingFace Space 的 `gradio_api/file=...`）。
+- 部分 URL 是**临时文件**（HF Space 通常 24 小时左右会失效）。
+
+## API 使用
+
+部署后可直接调用 OpenAI 格式 API：
+
+```bash
+curl -X POST https://your-project.pages.dev/v1/images/generations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer gitee:your-gitee-api-key" \
+  -d '{
+    "model": "gitee/z-image-turbo",
+    "prompt": "a cute cat",
+    "size": "1024x1024",
+    "steps": 9,
+    "n": 1,
+    "response_format": "url"
+  }'
+```
+
+说明：
+
+- Provider 路由通过 `model` 前缀区分：
+  - `a4f/...` -> A4F（`Authorization: Bearer a4f:...`）
+  - `gitee/...` -> Gitee AI（`Authorization: Bearer gitee:...`）
+  - `ms/...` -> ModelScope（`Authorization: Bearer ms:...`）
+  - 无前缀 -> HuggingFace（可选 token；`Authorization: Bearer <token>` 或 `Authorization: Bearer hf:<token>`）
 
 ## 安全性
 

@@ -6,7 +6,8 @@ import type { ProviderConfig } from '../types/provider'
 
 /** HuggingFace Spaces URLs */
 export const HF_SPACES = {
-  'z-image-turbo': 'https://mrfakename-z-image-turbo.hf.space',
+  // Primary space for z-image-turbo (public file URLs for browser display)
+  'z-image-turbo': 'https://luca115-z-image-turbo.hf.space',
   'qwen-image-fast': 'https://mcp-tools-qwen-image-fast.hf.space',
   'ovis-image': 'https://aidc-ai-ovis-image-7b.hf.space',
   'flux-1-schnell': 'https://black-forest-labs-flux-1-schnell.hf.space',
@@ -15,6 +16,13 @@ export const HF_SPACES = {
 
 /** Provider configuration map */
 export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
+  a4f: {
+    id: 'a4f',
+    name: 'A4F',
+    requiresAuth: true,
+    authHeader: 'Authorization',
+    baseUrl: 'https://api.a4f.co/v1',
+  },
   gitee: {
     id: 'gitee',
     name: 'Gitee AI',

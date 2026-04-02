@@ -4,10 +4,22 @@
  * Core state management and API calls for image generation
  */
 
-import type { ImageDetails } from '@z-image/shared'
+import {
+  DEFAULT_TRANSLATE_SYSTEM_PROMPT,
+  getModelByProviderAndId,
+  type ImageDetails,
+  LLM_PROVIDER_CONFIGS,
+} from '@z-image/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { generateImage, optimizePrompt, translatePrompt, upscaleImage } from '@/lib/api'
+import {
+  buildChatTokenWithPrefix,
+  buildImageTokenWithPrefix,
+  createOpenAIClientForBaseUrl,
+  getFullChatModelId,
+  getFullImageModelId,
+  openai,
+} from '@/lib/api'
 import {
   ASPECT_RATIOS,
   DEFAULT_NEGATIVE_PROMPT,
@@ -26,12 +38,17 @@ import {
   saveSettings,
 } from '@/lib/constants'
 import { encryptAndStoreToken, loadAllTokens, loadTokensArray } from '@/lib/crypto'
-import { parseTokens } from '@/lib/tokenRotation'
+import type { ImageHistoryItem } from '@/lib/historyStore'
+import { saveToHistory } from '@/lib/historyStore'
+import { parseTokens, runWithTokenRotation } from '@/lib/tokenRotation'
 
 const IMAGE_DETAILS_KEY = 'lastImageDetails'
 
+type ImageDetailsWithMeta = ImageDetails & { historyId?: string; generatedAt?: number }
+
 export function useImageGenerator() {
   const [tokens, setTokens] = useState<Record<ProviderType, string>>({
+    a4f: '',
     gitee: '',
     huggingface: '',
     modelscope: '',
@@ -48,10 +65,30 @@ export function useImageGenerator() {
   const [height, setHeight] = useState(() => loadSettings().height ?? 1024)
   const [steps, setSteps] = useState(() => loadSettings().steps ?? 9)
   const [loading, setLoading] = useState(false)
-  const [imageDetails, setImageDetails] = useState<ImageDetails | null>(() => {
+  const [imageDetails, setImageDetails] = useState<ImageDetailsWithMeta | null>(() => {
     try {
       const stored = localStorage.getItem(IMAGE_DETAILS_KEY)
       return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  })
+  const [historyId, setHistoryId] = useState<string | null>(() => {
+    try {
+      const stored = localStorage.getItem(IMAGE_DETAILS_KEY)
+      if (!stored) return null
+      const parsed = JSON.parse(stored) as ImageDetailsWithMeta
+      return parsed?.historyId || null
+    } catch {
+      return null
+    }
+  })
+  const [generatedAt, setGeneratedAt] = useState<number | null>(() => {
+    try {
+      const stored = localStorage.getItem(IMAGE_DETAILS_KEY)
+      if (!stored) return null
+      const parsed = JSON.parse(stored) as ImageDetailsWithMeta
+      return typeof parsed?.generatedAt === 'number' ? parsed.generatedAt : null
     } catch {
       return null
     }
@@ -60,11 +97,8 @@ export function useImageGenerator() {
   const [elapsed, setElapsed] = useState(0)
   const [selectedRatio, setSelectedRatio] = useState(() => loadSettings().selectedRatio ?? '1:1')
   const [uhd, setUhd] = useState(() => loadSettings().uhd ?? false)
-  const [upscale8k] = useState(() => loadSettings().upscale8k ?? false)
   const [showInfo, setShowInfo] = useState(false)
   const [isBlurred, setIsBlurred] = useState(() => localStorage.getItem('isBlurred') === 'true')
-  const [isUpscaled, setIsUpscaled] = useState(false)
-  const [isUpscaling, setIsUpscaling] = useState(false)
   const initialized = useRef(false)
 
   // LLM Settings for prompt optimization
@@ -77,6 +111,8 @@ export function useImageGenerator() {
 
   // Get models for current provider
   const availableModels = getModelsByProvider(provider)
+
+  const selectedModelConfig = getModelByProviderAndId(provider, model)
 
   useEffect(() => {
     if (!initialized.current) {
@@ -93,6 +129,17 @@ export function useImageGenerator() {
     }
   }, [provider, model])
 
+  // Update steps when model changes (use model default if available).
+  const lastModelKeyRef = useRef<string>('')
+  useEffect(() => {
+    const key = `${provider}:${model}`
+    if (key === lastModelKeyRef.current) return
+    lastModelKeyRef.current = key
+
+    const stepCfg = selectedModelConfig?.features?.steps
+    if (stepCfg) setSteps(stepCfg.default)
+  }, [provider, model, selectedModelConfig])
+
   useEffect(() => {
     if (initialized.current) {
       saveSettings({
@@ -103,12 +150,11 @@ export function useImageGenerator() {
         steps,
         selectedRatio,
         uhd,
-        upscale8k,
         provider,
         model,
       })
     }
-  }, [prompt, negativePrompt, width, height, steps, selectedRatio, uhd, upscale8k, provider, model])
+  }, [prompt, negativePrompt, width, height, steps, selectedRatio, uhd, provider, model])
 
   useEffect(() => {
     if (imageDetails) {
@@ -162,39 +208,44 @@ export function useImageGenerator() {
     await downloadImage(imageDetails.url, `zenith-${Date.now()}.png`, imageDetails.provider)
   }
 
-  const handleUpscale = async () => {
-    if (!imageDetails?.url || isUpscaling || isUpscaled) return
-    setIsUpscaling(true)
-    addStatus('Upscaling to 4x...')
-
-    // Get HuggingFace tokens array for rotation
-    const hfTokens = parseTokens(tokens.huggingface)
-    const result = await upscaleImage(
-      imageDetails.url,
-      4,
-      hfTokens.length > 0 ? hfTokens : undefined
-    )
-
-    if (result.success && result.data.url) {
-      setImageDetails((prev) => (prev ? { ...prev, url: result.data.url as string } : null))
-      setIsUpscaled(true)
-      addStatus('4x upscale complete!')
-      toast.success('Image upscaled to 4x!')
-    } else {
-      addStatus(`Upscale failed: ${result.success ? 'No URL returned' : result.error}`)
-      toast.error('Upscale failed')
-    }
-
-    setIsUpscaling(false)
-  }
-
   const handleDelete = () => {
     setImageDetails(null)
-    setIsUpscaled(false)
+    setHistoryId(null)
+    setGeneratedAt(null)
     setIsBlurred(false)
     setShowInfo(false)
     toast.success('Image deleted')
   }
+
+  const handleLoadFromHistory = useCallback((item: ImageHistoryItem) => {
+    setProvider(item.providerId)
+    setModel(item.modelId)
+    setPrompt(item.prompt)
+    setNegativePrompt(item.negativePrompt || '')
+    setWidth(item.width)
+    setHeight(item.height)
+    setSteps(item.steps)
+
+    setHistoryId(item.id)
+    setGeneratedAt(item.timestamp)
+    setIsBlurred(false)
+    setShowInfo(false)
+
+    setImageDetails({
+      url: item.url,
+      provider: item.providerName,
+      model: item.modelName,
+      dimensions: `${item.width} x ${item.height}`,
+      duration: item.duration || '',
+      seed: item.seed,
+      steps: item.steps,
+      prompt: item.prompt,
+      negativePrompt: item.negativePrompt || '',
+      historyId: item.id,
+      generatedAt: item.timestamp,
+    })
+    toast.success('Loaded from history')
+  }, [])
 
   const handleGenerate = async () => {
     const providerConfig = PROVIDER_CONFIGS[provider]
@@ -207,72 +258,82 @@ export function useImageGenerator() {
 
     setLoading(true)
     setImageDetails(null)
-    setIsUpscaled(false)
+    setHistoryId(null)
+    setGeneratedAt(null)
     setIsBlurred(false)
     setShowInfo(false)
     setStatus('Initializing...')
 
     try {
       addStatus(`Sending request to ${providerConfig.name}...`)
+      const start = Date.now()
+      const seed = Math.floor(Math.random() * 2147483647)
 
-      const result = await generateImage(
-        {
-          provider,
-          prompt,
-          negativePrompt,
-          width,
-          height,
-          steps,
-          model,
-        },
-        { tokens: providerTokens.length > 0 ? providerTokens : undefined }
+      const supportsNegative = selectedModelConfig?.features?.negativePrompt ?? true
+      const effectiveNegativePrompt = supportsNegative ? negativePrompt : ''
+
+      const request = {
+        model: getFullImageModelId(provider, model),
+        prompt,
+        ...(effectiveNegativePrompt ? { negative_prompt: effectiveNegativePrompt } : {}),
+        size: `${width}x${height}`,
+        steps,
+        seed,
+        n: 1,
+        response_format: 'url' as const,
+      }
+
+      const rotated = await runWithTokenRotation(
+        provider,
+        providerTokens,
+        (t) =>
+          openai.generateImage(request, t ? buildImageTokenWithPrefix(provider, t) : undefined),
+        { allowAnonymous: !providerConfig.requiresAuth }
       )
 
-      if (!result.success) {
-        throw new Error(result.error)
+      if (!rotated.success) throw new Error(rotated.error)
+
+      const url = rotated.data.data?.[0]?.url
+      if (!url) throw new Error('No image returned')
+
+      const durationMs = Date.now() - start
+      const duration = `${(durationMs / 1000).toFixed(1)}s`
+
+      const modelName = getModelsByProvider(provider).find((m) => m.id === model)?.name || model
+      const details: ImageDetails = {
+        url,
+        provider: providerConfig.name,
+        model: modelName,
+        dimensions: `${width} x ${height}`,
+        duration,
+        seed,
+        steps,
+        prompt,
+        negativePrompt: negativePrompt || '',
       }
 
-      const details = result.data.imageDetails
-      if (!details?.url) throw new Error('No image returned')
-      addStatus(`Image generated in ${details.duration}!`)
+      addStatus(`Image generated in ${duration}!`)
 
-      // Convert HuggingFace temporary URLs to blob URLs to prevent expiration
-      if (details.url.includes('.hf.space') && details.url.startsWith('http')) {
-        try {
-          addStatus('Caching image...')
-          // Use proxy to bypass CORS in production
-          const apiUrl = import.meta.env.VITE_API_URL || ''
-          const proxyUrl = `${apiUrl}/api/proxy-image?url=${encodeURIComponent(details.url)}`
-          const response = await fetch(proxyUrl)
-          if (response.ok) {
-            const blob = await response.blob()
-            details.url = URL.createObjectURL(blob)
-          }
-        } catch (e) {
-          console.warn('Failed to cache HF image:', e)
-        }
-      }
+      const now = Date.now()
+      const newHistoryId = saveToHistory({
+        url: details.url,
+        prompt: details.prompt,
+        negativePrompt: details.negativePrompt,
+        providerId: provider,
+        providerName: details.provider,
+        modelId: model,
+        modelName: details.model,
+        width,
+        height,
+        steps: details.steps,
+        seed: details.seed,
+        duration: details.duration,
+        source: 'home',
+      })
 
-      // Auto upscale to 8K if enabled
-      if (upscale8k && details.url.startsWith('http')) {
-        addStatus('Upscaling to 8K...')
-        const hfTokens = parseTokens(tokens.huggingface)
-        const upResult = await upscaleImage(
-          details.url,
-          4,
-          hfTokens.length > 0 ? hfTokens : undefined
-        )
-
-        if (upResult.success && upResult.data.url) {
-          details.url = upResult.data.url
-          addStatus('8K upscale complete!')
-        } else {
-          addStatus(`8K upscale failed: ${upResult.success ? 'No URL' : upResult.error}`)
-          toast.error('8K upscale failed, showing original image')
-        }
-      }
-
-      setImageDetails(details)
+      setHistoryId(newHistoryId)
+      setGeneratedAt(now)
+      setImageDetails({ ...details, historyId: newHistoryId, generatedAt: now })
       toast.success('Image generated!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'An error occurred'
@@ -403,31 +464,86 @@ export function useImageGenerator() {
     addStatus('Optimizing prompt...')
 
     try {
-      const tokens = await getLLMTokens()
-      const result = await optimizePrompt(
-        {
-          prompt,
-          provider: llmSettings.llmProvider,
-          model:
-            llmSettings.llmProvider === 'custom'
-              ? llmSettings.customOptimizeConfig.model
-              : llmSettings.llmModel,
-          lang: 'en',
-          systemPrompt: getEffectiveSystemPrompt(llmSettings.customSystemPrompt),
-          customConfig:
-            llmSettings.llmProvider === 'custom' ? llmSettings.customOptimizeConfig : undefined,
-        },
-        tokens.length > 0 ? tokens : undefined
-      )
+      const llmProvider = llmSettings.llmProvider
+      const systemPrompt = `${getEffectiveSystemPrompt(llmSettings.customSystemPrompt)}\n\nEnsure the output is in English.`
+      const modelId =
+        llmProvider === 'custom' ? llmSettings.customOptimizeConfig.model : llmSettings.llmModel
 
-      if (result.success) {
-        setPrompt(result.data.optimized)
-        addStatus('Prompt optimized!')
-        toast.success('Prompt optimized!')
+      let optimized: string
+
+      if (llmProvider === 'custom') {
+        const { baseUrl, apiKey, model } = llmSettings.customOptimizeConfig
+        if (!baseUrl || !apiKey || !model)
+          throw new Error('Please configure custom provider URL, API key, and model')
+        const client = createOpenAIClientForBaseUrl(baseUrl)
+        const resp = await client.chatCompletions(
+          {
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+            max_tokens: 1000,
+          },
+          apiKey
+        )
+        optimized = resp.choices?.[0]?.message?.content || ''
       } else {
-        addStatus(`Optimization failed: ${result.error}`)
-        toast.error(result.error)
+        const cfg = LLM_PROVIDER_CONFIGS[llmProvider]
+        const tokens = await getLLMTokens()
+        const tokenProvider =
+          llmProvider === 'gitee-llm'
+            ? 'gitee'
+            : llmProvider === 'modelscope-llm'
+              ? 'modelscope'
+              : llmProvider === 'huggingface-llm'
+                ? 'huggingface'
+                : llmProvider === 'deepseek'
+                  ? 'deepseek'
+                  : null
+
+        if (cfg?.needsAuth && tokens.length === 0) {
+          throw new Error(`Please configure your ${cfg.name} token first`)
+        }
+
+        if (!tokenProvider) {
+          const resp = await openai.chatCompletions({
+            model: getFullChatModelId(llmProvider, modelId),
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+            max_tokens: 1000,
+          })
+          optimized = resp.choices?.[0]?.message?.content || ''
+        } else {
+          const rotated = await runWithTokenRotation(
+            tokenProvider,
+            tokens,
+            (t) =>
+              openai.chatCompletions(
+                {
+                  model: getFullChatModelId(llmProvider, modelId),
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: prompt },
+                  ],
+                  max_tokens: 1000,
+                },
+                t ? buildChatTokenWithPrefix(llmProvider, t) : undefined
+              ),
+            { allowAnonymous: !cfg?.needsAuth }
+          )
+          if (!rotated.success) throw new Error(rotated.error)
+          optimized = rotated.data.choices?.[0]?.message?.content || ''
+        }
       }
+
+      if (!optimized.trim()) throw new Error('Empty response from provider')
+
+      setPrompt(optimized)
+      addStatus('Prompt optimized!')
+      toast.success('Prompt optimized!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Optimization failed'
       addStatus(`Error: ${msg}`)
@@ -445,31 +561,91 @@ export function useImageGenerator() {
     addStatus('Translating prompt...')
 
     try {
-      const tokens = await getTranslateTokens()
-      const result = await translatePrompt(
-        {
-          prompt,
-          provider: llmSettings.translateProvider,
-          model:
-            llmSettings.translateProvider === 'custom'
-              ? llmSettings.customTranslateConfig.model
-              : llmSettings.translateModel,
-          customConfig:
-            llmSettings.translateProvider === 'custom'
-              ? llmSettings.customTranslateConfig
-              : undefined,
-        },
-        tokens.length > 0 ? tokens : undefined
-      )
+      const llmProvider = llmSettings.translateProvider
+      const systemPrompt = DEFAULT_TRANSLATE_SYSTEM_PROMPT
+      const modelId =
+        llmProvider === 'custom'
+          ? llmSettings.customTranslateConfig.model
+          : llmSettings.translateModel
 
-      if (result.success) {
-        setPrompt(result.data.translated)
-        addStatus('Prompt translated!')
-        toast.success('Prompt translated to English!')
+      let translated: string
+
+      if (llmProvider === 'custom') {
+        const { baseUrl, apiKey, model } = llmSettings.customTranslateConfig
+        if (!baseUrl || !apiKey || !model)
+          throw new Error('Please configure custom provider URL, API key, and model')
+        const client = createOpenAIClientForBaseUrl(baseUrl)
+        const resp = await client.chatCompletions(
+          {
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+            max_tokens: 1000,
+            temperature: 0.3,
+          },
+          apiKey
+        )
+        translated = resp.choices?.[0]?.message?.content || ''
       } else {
-        addStatus(`Translation failed: ${result.error}`)
-        toast.error(result.error)
+        const cfg = LLM_PROVIDER_CONFIGS[llmProvider]
+        const tokens = await getTranslateTokens()
+        const tokenProvider =
+          llmProvider === 'gitee-llm'
+            ? 'gitee'
+            : llmProvider === 'modelscope-llm'
+              ? 'modelscope'
+              : llmProvider === 'huggingface-llm'
+                ? 'huggingface'
+                : llmProvider === 'deepseek'
+                  ? 'deepseek'
+                  : null
+
+        if (cfg?.needsAuth && tokens.length === 0) {
+          throw new Error(`Please configure your ${cfg.name} token first`)
+        }
+
+        if (!tokenProvider) {
+          const resp = await openai.chatCompletions({
+            model: getFullChatModelId(llmProvider, modelId),
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+            max_tokens: 1000,
+            temperature: 0.3,
+          })
+          translated = resp.choices?.[0]?.message?.content || ''
+        } else {
+          const rotated = await runWithTokenRotation(
+            tokenProvider,
+            tokens,
+            (t) =>
+              openai.chatCompletions(
+                {
+                  model: getFullChatModelId(llmProvider, modelId),
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: prompt },
+                  ],
+                  max_tokens: 1000,
+                  temperature: 0.3,
+                },
+                t ? buildChatTokenWithPrefix(llmProvider, t) : undefined
+              ),
+            { allowAnonymous: !cfg?.needsAuth }
+          )
+          if (!rotated.success) throw new Error(rotated.error)
+          translated = rotated.data.choices?.[0]?.message?.content || ''
+        }
       }
+
+      if (!translated.trim()) throw new Error('Empty response from provider')
+
+      setPrompt(translated)
+      addStatus('Prompt translated!')
+      toast.success('Prompt translated to English!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Translation failed'
       addStatus(`Error: ${msg}`)
@@ -499,8 +675,6 @@ export function useImageGenerator() {
     uhd,
     showInfo,
     isBlurred,
-    isUpscaled,
-    isUpscaling,
     // LLM State
     llmSettings,
     isOptimizing,
@@ -529,9 +703,11 @@ export function useImageGenerator() {
     handleRatioSelect,
     handleUhdToggle,
     handleDownload,
-    handleUpscale,
     handleDelete,
     handleGenerate,
+    handleLoadFromHistory,
+    historyId,
+    generatedAt,
     // LLM Handlers
     handleOptimize,
     handleTranslate,
